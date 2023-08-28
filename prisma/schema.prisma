@@ -1,0 +1,51 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+}
+
+model Conversation {
+  id        String     @id @default(cuid())
+  users     User[]
+  isGroup   Boolean    @default(false)
+  image     String?
+  name      String?
+  createdAt DateTime   @default(now())
+  messages  Messages[]
+  lastMessageAt DateTime @default(now())
+}
+
+model Messages {
+  id String @id @default(cuid())
+  body String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  authorId String
+  author User @relation("written",fields: [authorId],references: [id])
+  seen Boolean @default(false)
+  seenBy User[] @relation("seen") 
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  password      String
+  email         String?   
+  emailVerified DateTime? @map("email_verified")
+  image         String?   @default("data:image/jpeg;base64,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")
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+
+  conversations Conversation[]
+
+  messages Messages[] @relation("written")
+
+  seenMessages Messages[] @relation("seen")
+  @@map(name: "users")
+}
